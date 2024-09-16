@@ -83,7 +83,6 @@ namespace iTi_day_09_task
 
         static Student() => studentCount = 0;
 
-
         public Student(string? name, int age)
         {
             studentCount++;
