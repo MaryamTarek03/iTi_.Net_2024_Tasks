@@ -102,7 +102,7 @@ namespace iTi_day_11_task
             Player player = new(12, 0, "Maryam");
             ScoreBoard scoreBoard = new(0);
 
-            player.Score += scoreBoard.Score;
+            player.Score += scoreBoard.Score; // subscribe
             player.OnScore();
             player.OnScore();
             player.OnScore();
