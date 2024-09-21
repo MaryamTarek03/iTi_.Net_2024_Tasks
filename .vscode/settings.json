@@ -1,10 +1,15 @@
 {
   "cSpell.words": [
     "bdate",
+    "combobox",
+    "Departmentid",
+    "deptdesc",
+    "deptid",
     "Dname",
     "Dnum",
     "ESSN",
     "fname",
+    "Instructorid",
     "Kamel",
     "lname",
     "MGRSSN",
@@ -12,6 +17,7 @@
     "pname",
     "pnumber",
     "Rabwah",
+    "textbox",
     "Yara",
     "Youssef"
   ]
