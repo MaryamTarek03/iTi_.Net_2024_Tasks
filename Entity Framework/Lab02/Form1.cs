@@ -5,68 +5,60 @@ namespace iTi_day_15_lab
     public partial class Form1 : Form
     {
         int newsId = 0;
-        int authorId = 5;
+        Author author;
         NewsArchiveContext context;
 
         public Form1()
         {
             InitializeComponent();
             context = new NewsArchiveContext();
+            author = new Author();
         }
-
         private void Form1_Load(object sender, EventArgs e)
         {
             ShowAuth();
             EnableAdd(true);
         }
 
-        public void ShowAuth()
+        public void EnableNews(bool enable)
         {
-            username_textbox.Visible = true;
-            password_textbox.Visible = true;
-            login_button.Visible = true;
-            register_button.Visible = true;
+            username_textbox.Visible = !enable;
+            password_textbox.Visible = !enable;
+            login_button.Visible = !enable;
+            register_button.Visible = !enable;
 
-            newsDataGrid.Visible = false;
-            title_textbox.Visible = false;
-            brief_textbox.Visible = false;
-            content_textbox.Visible = false;
-            category_combobox.Visible = false;
-            insert_button.Visible = false;
-            update_button.Visible = false;
-            delete_button.Visible = false;
-            clear_button.Visible = false;
+            newsDataGrid.Visible = enable;
+            title_textbox.Visible = enable;
+            brief_textbox.Visible = enable;
+            content_textbox.Visible = enable;
+            category_combobox.Visible = enable;
+            insert_button.Visible = enable;
+            update_button.Visible = enable;
+            delete_button.Visible = enable;
+            clear_button.Visible = enable;
+            signout_button.Visible = enable;
+            welcome_message.Visible = enable;
         }
+
+        public void ShowAuth()
+            => EnableNews(false);
         public void ShowNews()
         {
             GetAuthorNewsPieces();
             GetCategories();
 
-            username_textbox.Visible = false;
-            password_textbox.Visible = false;
-            login_button.Visible = false;
-            register_button.Visible = false;
-
-            newsDataGrid.Visible = true;
-            title_textbox.Visible = true;
-            brief_textbox.Visible = true;
-            content_textbox.Visible = true;
-            category_combobox.Visible = true;
-            insert_button.Visible = true;
-            update_button.Visible = true;
-            delete_button.Visible = true;
-            clear_button.Visible = true;
+            EnableNews(true);
         }
 
         #region authentication page
 
         #region data queries
-        public bool AuthorExist(string username)
+        public bool AuthorExist()
         {
             try
             {
                 Author? author = context.Author?
-                    .Where(author => author.Username == username_textbox.Text)
+                    .Where(author => author.Username == username_textbox.Text.ToLower())
                     .Single();
                 return author != null;
             }
@@ -76,19 +68,19 @@ namespace iTi_day_15_lab
                 return false;
             }
         }
-        public Author GetAuthorByUsername(string username)
+        public Author GetAuthorByUsername()
         {
             Author? author
                 = context.Author?
-                .Where(author => author.Username == username_textbox.Text)
+                .Where(author => author.Username == username_textbox.Text.ToLower())
                 .SingleOrDefault();
             return author;
         }
         public void AddAuthor()
         {
-            Author author = new Author()
+            Author newAuthor = new Author()
             {
-                Username = username_textbox.Text,
+                Username = username_textbox.Text.ToLower(),
                 Password = password_textbox.Text,
                 JoinedAt = DateTime.UtcNow,
                 Name = username_textbox.Text,
@@ -96,10 +88,8 @@ namespace iTi_day_15_lab
             };
             try
             {
-                context.Author?.Add(author);
+                context.Author?.Add(newAuthor);
                 context.SaveChanges();
-                authorId = author.Id;
-                welcome_message.Text += author.Name;
             }
             catch (Exception e)
             {
@@ -121,19 +111,19 @@ namespace iTi_day_15_lab
                 MessageBox.Show("Please fill the fields");
                 return;
             }
-            if (!AuthorExist(username_textbox.Text))
+            if (!AuthorExist())
             {
                 MessageBox.Show("The author doesn't exist!");
                 return;
             }
-            Author author = GetAuthorByUsername(username_textbox.Text);
+            Author author = GetAuthorByUsername();
             if (author.Password != password_textbox.Text)
             {
                 MessageBox.Show("The password is incorrect!");
                 return;
             }
-            authorId = author.Id;
-            welcome_message.Text += author.Name;
+            this.author = author;
+            welcome_message.Text = author.Name;
             ShowNews();
         }
         private void OnRegisterClick(object sender, EventArgs e)
@@ -143,12 +133,14 @@ namespace iTi_day_15_lab
                 MessageBox.Show("Please fill all fields");
                 return;
             }
-            if (AuthorExist(username_textbox.Text))
+            if (AuthorExist())
             {
                 MessageBox.Show("This author already exist!");
                 return;
             }
             AddAuthor();
+            author = GetAuthorByUsername();
+            welcome_message.Text = author.Name;
             ShowNews();
         }
         #endregion
@@ -168,7 +160,7 @@ namespace iTi_day_15_lab
         {
             newsDataGrid.DataSource
             = context.NewsPiece?
-              .Where(newsPiece => newsPiece.AuthorId == authorId)
+              .Where(newsPiece => newsPiece.AuthorId == author.Id)
               .Select(n => new { n.Id, n.Title, n.Brief, n.Description, Category_Name = n.Category.Name, n.Date, n.Time })
               .ToList();
         }
@@ -204,21 +196,26 @@ namespace iTi_day_15_lab
             delete_button.Enabled = !enable;
             update_button.Enabled = !enable;
         }
+        public void ShowProfile()
+        {
+            MessageBox
+                .Show(Text = $"ID: {author.Id}\nName: {author.Name}\nAge: {author.Age}\nDate Joined: {author.JoinedAt}\n Username: {author.Username}", "Welcome!");
+        }
         #endregion
 
         #region data queries
         public void InsertNewsPiece()
         {
             int categoryId = (int)category_combobox.SelectedValue;
-            Author? author = context.Author?.Where(author => author.Id == authorId).FirstOrDefault();
+            Author? newAuthor = context.Author?.Where(author => author.Id == this.author.Id).FirstOrDefault();
             Category? category
                 = context.Category?
                 .Where(category => category.Id == categoryId)
                 .FirstOrDefault();
             NewsPiece newsPiece = new NewsPiece()
             {
-                Author = author,
-                AuthorId = authorId,
+                Author = newAuthor,
+                AuthorId = author.Id,
                 Title = title_textbox.Text,
                 Brief = brief_textbox.Text,
                 Description = content_textbox.Text,
@@ -284,6 +281,13 @@ namespace iTi_day_15_lab
             GetAuthorNewsPieces();
             EnableAdd(true);
         }
+        private void OnSignOutClick(object sender, EventArgs e)
+        {
+            username_textbox.Text = string.Empty;
+            password_textbox.Text = string.Empty;
+            ShowAuth();
+        }
+        private void OnNameClick(object sender, EventArgs e) => ShowProfile();
 
         private void OnRowHeaderClick(object sender, DataGridViewCellMouseEventArgs e)
         {
@@ -293,6 +297,5 @@ namespace iTi_day_15_lab
         }
         #endregion
         #endregion
-
     }
 }
